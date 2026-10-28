@@ -1,0 +1,13 @@
+{
+  "name": "taskhub-web-chat",
+  "version": "1.0.0",
+  "description": "10.2 – Interface de chat web : backend Express + front HTML, streaming",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.1.0",
+    "express": "^5.1.0"
+  }
+}

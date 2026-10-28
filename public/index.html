@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TaskHub Assistant</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 720px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      #log p {
+        white-space: pre-wrap;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+      }
+      .user {
+        background: #e8f0fe;
+      }
+      .assistant {
+        background: #f4f4f4;
+      }
+      form {
+        display: flex;
+        gap: 0.5rem;
+      }
+      input {
+        flex: 1;
+        padding: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>TaskHub Assistant</h1>
+    <div id="log"></div>
+    <form id="f">
+      <input id="q" autocomplete="off" placeholder="Pose ta question" required />
+      <button>Envoyer</button>
+    </form>
+
+    <script>
+      const messages = [];
+      const log = document.getElementById("log");
+      const form = document.getElementById("f");
+      const input = document.getElementById("q");
+
+      function addBubble(role, text) {
+        const p = document.createElement("p");
+        p.className = role;
+        // textContent et non innerHTML : le texte de l'utilisateur ou du modèle n'est jamais interprété comme du HTML (XSS)
+        p.textContent = text;
+        log.append(p);
+        return p;
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const question = input.value.trim();
+        if (!question) return;
+        input.value = "";
+        messages.push({ role: "user", content: question });
+        addBubble("user", question);
+
+        const bubble = addBubble("assistant", "…");
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages }),
+        });
+        if (!response.ok) {
+          bubble.textContent = "Erreur : " + response.status;
+          messages.pop();
+          return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let full = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          full += decoder.decode(value, { stream: true });
+          bubble.textContent = full;
+        }
+        messages.push({ role: "assistant", content: full });
+      });
+    </script>
+  </body>
+</html>
